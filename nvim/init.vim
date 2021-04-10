@@ -1,4 +1,5 @@
 call plug#begin("~/.vim/plugged")
+
   Plug 'itchyny/lightline.vim'
   Plug 'haishanh/night-owl.vim'
   " Language Client
@@ -10,6 +11,7 @@ call plug#begin("~/.vim/plugged")
   Plug 'leafgarland/typescript-vim'
 	Plug 'HerringtonDarkholme/yats.vim'
 	"Plug 'peitalin/vim-jsx-typescript' "
+	Plug 'morhetz/gruvbox'
 
 
   " File Explorer with Icons
@@ -21,8 +23,9 @@ call plug#begin("~/.vim/plugged")
   Plug 'junegunn/fzf.vim'
 
 	Plug 'pangloss/vim-javascript'
-	Plug 'styled-components/vim-styled-components', { 'branch': 'main' }
-	Plug 'jparise/vim-graphql'
+
+	Plug 'tpope/vim-fugitive'
+
 call plug#end()
 
 " Enable theming support
@@ -32,7 +35,11 @@ endif
 
 " Theme
 syntax enable
-colorscheme night-owl
+colorscheme gruvbox
+
+set hidden
+set cmdheight=2
+set shortmess=aFc
 
 let g:NERDTreeShowHidden = 1
 let g:NERDTreeMinimalUI = 1
@@ -43,7 +50,7 @@ autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isT
 " Toggle
 nnoremap <silent> <C-b> :NERDTreeFind<CR>
 
-nnoremap <C-p> :FZF<CR>
+nnoremap <C-p> :GFiles<CR>
 let g:fzf_action = {
   \ 'ctrl-t': 'tab split',
   \ 'ctrl-s': 'split',
@@ -99,7 +106,8 @@ augroup end
 nmap <leader>rn <Plug>(coc-rename)
 
 " GoTo code navigation.
-nmap <silent> gd :vsp<CR><Plug>(coc-definition)
+nmap <silent> gd <Plug>(coc-definition)
+nmap <silent> gs :vsp<CR><Plug>(coc-definition)
 
 nmap <silent> gy <Plug>(coc-type-definition)
 nmap <silent> gi <Plug>(coc-implementation)
@@ -130,3 +138,14 @@ autocmd BufLeave *.{js,jsx,ts,tsx} :syntax sync clear
 inoremap <expr> <C-j> pumvisible() ? "\<C-n>" : "\<C-j>"
 inoremap <expr> <C-k> pumvisible() ? "\<C-p>" : "\<C-k>"
 
+
+
+let g:lightline = {
+      \ 'active': {
+      \   'left': [ [ 'mode', 'paste' ],
+      \             [ 'gitbranch', 'readonly', 'filename', 'modified' ] ]
+      \ },
+      \ 'component_function': {
+      \   'gitbranch': 'FugitiveHead',
+      \ },
+      \ }
