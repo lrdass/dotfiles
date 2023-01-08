@@ -94,16 +94,16 @@
   :ensure t
   :config
   ;; Global settings (defaults)
-  (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+  (setq doom-themes-enable-bold t ; if nil, bold is universally disabled
         doom-themes-enable-italic t) ; if nil, italics is universally disabled
-  (load-theme 'doom-solarized-dark t)
+  (load-theme 'doom-solarized-dark-high-contrast t)
 
   ;; Enable flashing mode-line on errors
   (doom-themes-visual-bell-config)
   ;; Enable custom neotree theme (all-the-icons must be installed!)
   (doom-themes-neotree-config)
   ;; or for treemacs users
-  (setq doom-themes-treemacs-theme "doom-solarized-dark") ; use "doom-colors" for less minimal icon theme
+  (setq doom-themes-treemacs-theme "doom-atom") ; use "doom-colors" for less minimal icon theme
   (doom-themes-treemacs-config)
   ;; Corrects (and improves) org-mode's native fontification.
   (doom-themes-org-config))
@@ -245,6 +245,9 @@
 (use-package lsp-treemacs
   :after lsp)
 
+
+(setq doom-themes-treemacs-enable-variable-pitch nil)
+
 (use-package lsp-ivy)
 
 (use-package racket-mode)
@@ -271,16 +274,6 @@
 (define-key slime-repl-mode-map
     (read-kbd-macro paredit-backward-delete-key) nil))
 (add-hook 'slime-repl-mode-hook 'override-slime-repl-bindings-with-paredit)
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   '(rjsx-mode tide prettier-js cmake-mode which-key use-package typescript-mode smex slime rainbow-delimiters racket-mode paredit night-owl-theme magit lsp-ui lsp-treemacs lsp-ivy linum-relative js2-mode ivy-rich helpful general flycheck exec-path-from-shell evil-visual-mark-mode evil-collection doom-themes doom-modeline counsel-projectile company all-the-icons)))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
+
+
+(setq inferior-lisp-program "clisp")
