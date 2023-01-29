@@ -163,7 +163,6 @@
 (rune/leader-keys
   "ts" '(hydra-text-scale/body :which-key "scale text"))
 
-
 (use-package projectile
   :diminish projectile-mode
   :config (projectile-mode)
@@ -179,7 +178,6 @@
 (use-package counsel-projectile
   :config (counsel-projectile-mode))
 
-
 (use-package magit
   :commands (magit-status magit-get-current-branch)
   :custom
@@ -189,45 +187,48 @@
    :config (exec-path-from-shell-initialize))
 
 (use-package lsp-mode
-  :ensure t
-  :hook (
-	 (web-mode . lsp-deferred)
-	 (lsp-mode . lsp-enable-which-key-integration)
-	 )
   :commands (lsp lsp-deferred)
   :init
   (setq lsp-keymap-prefix "C-c l")
   :config
-    ;; lsp-mode
-    (setq lsp-log-io nil) ;; Don't log everything = speed
-    (setq lsp-keymap-prefix "C-c l")
-    (setq lsp-restart 'auto-restart)
-    (setq lsp-ui-sideline-show-diagnostics t)
-    (setq lsp-ui-sideline-show-hover t)
-    (setq lsp-ui-sideline-show-code-actions t)
-    (lsp-enable-which-key-integration t))
+  (lsp-enable-which-key-integration t))
+
+(use-package js2-mode
+  :hook (js2-mode . lsp-deferred)
+  :config
+  (setq js-indent-level 2))
+
+(use-package rjsx-mode
+  :ensure t
+  :config
+  (add-to-list 'auto-mode-alist '("components\\/.*\\.js\\'" . rjsx-mode)))
 
 
+(defun setup-tide-mode ()
+  (interactive)
+  (tide-setup)
+  (flycheck-mode +1)
+  (setq flycheck-check-syntax-automatically '(save mode-enabled))
+  (tide-hl-identifier-mode +1)
+  (company-mode +1))
 
 (use-package tide
   :ensure t
-  :after (company flycheck)
-  :hook ((before-save . tide-format-before-save)))
+  :after (typescript-mode rjsx-mode company flycheck)
+  :hook ((typescript-mode . tide-setup)
+         (typescript-mode . tide-hl-identifier-mode)
+         (before-save . tide-format-before-save)))
 
+(defun maybe-use-prettier ()
+  "Enable prettier-js-mode if an rc file is located."
+  (if (locate-dominating-file default-directory ".prettierrc")
+      (prettier-js-mode +1)))
 
-(defun enable-minor-mode (my-pair)
-  "Enable minor mode if filename match the regexp.  MY-PAIR is a cons cell (regexp . minor-mode)."
-  (if (buffer-file-name)
-      (if (string-match (car my-pair) buffer-file-name)
-	  (funcall (cdr my-pair)))))
 
 (use-package prettier-js
-  :ensure t)
-(add-hook 'web-mode-hook #'(lambda ()
-                             (enable-minor-mode
-                              '("\\.jsx?\\'" . prettier-js-mode))
-			     (enable-minor-mode
-                              '("\\.tsx?\\'" . prettier-js-mode))))
+  :ensure t
+  :after (rjsx-mode)
+  :hook (rjsx-mode . prettier-js-mode))
 
 
 (use-package tree-sitter
@@ -244,11 +245,23 @@
   :after tree-sitter)
 
 
+(use-package typescript-mode
+  :after tree-sitter
+  :mode "\\.tsx\\'"
+  :mode "\\.ts\\'"
+  :hook (typescript-mode . lsp-deferred)
+  :config
+  (define-derived-mode typescriptreact-mode typescript-mode
+    "TypeScript TSX")
+  ;; use our derived mode for tsx files
+  (add-hook 'typescript-mode-hook #'prettier-js-mode)
+  (add-to-list 'auto-mode-alist '("\\.tsx?\\'" . typescriptreact-mode))
+  ;; by default, typescript-mode is mapped to the treesitter typescript parser
+  ;; use our derived mode to map both .tsx AND .ts -> typescriptreact-mode -> treesitter tsx
+  (add-to-list 'tree-sitter-major-mode-language-alist '(typescriptreact-mode . tsx))
+  (setq typescript-indent-level 2))
 
 
-;; company
-(setq company-minimum-prefix-length 1
-      company-idle-delay 0.0)
 (use-package company
   :after lsp-mode
   :hook (lsp-mode . company-mode)
@@ -256,23 +269,11 @@
          ("<tab>" . company-complete-selection))
         (:map lsp-mode-map
          ("<tab>" . company-indent-or-complete-common))
-  :config
-    (progn
-      (setq company-idle-delay 0.2
-	    ;; min prefix of 2 chars
-	    company-minimum-prefix-length 2
-	    company-selection-wrap-around t
-	    company-show-numbers t
-	    company-dabbrev-downcase nil
-	    company-echo-delay 0
-	    company-tooltip-limit 20
-	    company-transformers '(company-sort-by-occurrence)
-	    company-begin-commands '(self-insert-command)
-	   )
-    (global-company-mode)))
+  :custom
+  (company-minimum-prefix-length 1)
+  (company-idle-delay 0.0))
 
 (use-package lsp-ui
-  :ensure t
   :hook (lsp-mode . lsp-ui-mode)
   :custom
   (lsp-ui-doc-position 'bottom)
@@ -313,7 +314,6 @@
 
 (add-hook 'slime-repl-mode-hook 'override-slime-repl-bindings-with-paredit)
 
-
 (setq inferior-lisp-program "clisp")
 
 
@@ -322,75 +322,8 @@
 
 (add-to-list 'auto-mode-alist '("components\\/.*\\.js\\'" . rjsx-mode))
 
-
+(add-hook 'typescriptreact-mode-hook 'maybe-use-prettier)
+(add-hook 'typescript-mode-hook 'maybe-use-prettier)
+(add-hook 'js2-mode-hook 'maybe-use-prettier)
 (add-to-list 'default-frame-alist '(inhibit-double-buffering . t))
 
-
-(defun setup-tide-mode ()
-  (interactive)
-  (tide-setup)
-  (flycheck-mode +1)
-  (setq flycheck-check-syntax-automatically '(save mode-enabled))
-  (eldoc-mode +1)
-  (tide-hl-identifier-mode +1)
-  ;; company is an optional dependency. You have to
-  ;; install it separately via package-install
-  ;; `M-x package-install [ret] company`
-  (company-mode +1))
-
-;; aligns annotation to the right hand side
-(setq company-tooltip-align-annotations t)
-
-;; formats the buffer before saving
-(add-hook 'before-save-hook 'tide-format-before-save)
-
-
-(use-package exec-path-from-shell
-  :ensure t
-  :config
-  (exec-path-from-shell-initialize))
-
-(use-package json-mode
-  :ensure t)
-
-
-;; web-mode
-(setq web-mode-markup-indent-offset 2)
-(setq web-mode-code-indent-offset 2)
-(setq web-mode-css-indent-offset 2)
-(use-package web-mode
-  :ensure t
-  :mode (("\\.js\\'" . web-mode)
-	 ("\\.jsx\\'" .  web-mode)
-	 ("\\.ts\\'" . web-mode)
-	 ("\\.tsx\\'" . web-mode)
-	 ("\\.html\\'" . web-mode))
-  :commands web-mode)
-
-
-;; lsp-mode
-(setq lsp-log-io nil) ;; Don't log everything = speed
-(setq lsp-keymap-prefix "C-c l")
-(setq lsp-restart 'auto-restart)
-(setq lsp-ui-sideline-show-diagnostics t)
-(setq lsp-ui-sideline-show-hover t)
-(setq lsp-ui-sideline-show-code-actions t)
-
-
-
-(use-package highlight-indent-guides
-  :ensure t
-  :hook (prog-mode  . highlight-indent-guides-mode ))
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(custom-safe-themes
-   '("afa47084cb0beb684281f480aa84dab7c9170b084423c7f87ba755b15f6776ef" "e3daa8f18440301f3e54f2093fe15f4fe951986a8628e98dcd781efbec7a46f2" "467dc6fdebcf92f4d3e2a2016145ba15841987c71fbe675dcfe34ac47ffb9195" default)))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
